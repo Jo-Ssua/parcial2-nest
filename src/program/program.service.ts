@@ -1,4 +1,4 @@
-import { ConflictException, HttpException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { ConflictException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Program } from './entities/program.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -7,6 +7,7 @@ import { CreateProgramDto } from './dto/create-program.dto';
 import { PaginationDto } from 'src/student/dto/pagination.dto';
 import { AssignStudentsDto } from './dto/assign-students.dto';
 import { BulkCreateProgramDto } from './dto/bulk-create-program.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class ProgramService {
@@ -58,6 +59,21 @@ export class ProgramService {
 
 
     // TODO Reto 2: findOne(id) -> programa con sus estudiantes, 404 si no existe
+    async findOne(id : string){
+        try {
+            if(isUUID(id)){
+               const program = await this.programRepository.findOneBy({id});
+               if(!program){
+                    throw new NotFoundException(`Program with ${id} not found`);
+                }
+                return program;
+            }           
+            
+        } catch (error) {
+            this.handleException(error);
+            
+        }
+    }
 
 
     // TODO Reto 2: assignStudents(id, assignStudentsDto) -> AGREGA estudiantes al programa
@@ -72,12 +88,13 @@ export class ProgramService {
 
     // TODO Reto 3: bulkCreate(bulkCreateProgramDto, user) -> crea todos los programas o ninguno
     //   (transacción). Cualquier nombre/código repetido -> 409 y rollback.
-    async bulkCreate(bulkCreateProgramDto : BulkCreateProgramDto, user : User) : Promise<Program[] | undefined>{
+    async bulkCreate(bulkCreateProgramDto : BulkCreateProgramDto, user : User){
+        const queryRunner = this.datasource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
         try {
             const {programs} = bulkCreateProgramDto;
-            const queryRunner = this.datasource.createQueryRunner();
-            await queryRunner.connect();
-            await queryRunner.startTransaction();
+        
 
             for (const program of programs){
                 const {name,code} = program;
@@ -86,12 +103,21 @@ export class ProgramService {
                 if(existingProgram){
                     throw new ConflictException(`Program with name ${name} and ${code} already exists`)
                 }
-
                 
+                const programToSave = await queryRunner.manager.create(Program, {
+                    ...program,
+                    createdBy : user
+                })
+                await queryRunner.manager.save(programToSave);
 
             }
 
+            await queryRunner.commitTransaction();
+            await queryRunner.release();
+
         } catch (error) {
+            await queryRunner.rollbackTransaction();
+            await queryRunner.release();
             this.handleException(error);
         }
     }
