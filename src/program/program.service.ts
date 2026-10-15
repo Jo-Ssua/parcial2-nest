@@ -6,6 +6,7 @@ import { User } from 'src/user/entities/user.entity';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { PaginationDto } from 'src/student/dto/pagination.dto';
 import { AssignStudentsDto } from './dto/assign-students.dto';
+import { BulkCreateProgramDto } from './dto/bulk-create-program.dto';
 
 @Injectable()
 export class ProgramService {
@@ -16,7 +17,7 @@ export class ProgramService {
     constructor(
         @InjectRepository(Program)
         private readonly programRepository : Repository<Program>,
-        private readonly dataSource : DataSource,
+        private readonly datasource : DataSource,
     ){}
 
     // TODO Reto 1: create(createProgramDto, user) -> guarda el programa
@@ -71,6 +72,29 @@ export class ProgramService {
 
     // TODO Reto 3: bulkCreate(bulkCreateProgramDto, user) -> crea todos los programas o ninguno
     //   (transacción). Cualquier nombre/código repetido -> 409 y rollback.
+    async bulkCreate(bulkCreateProgramDto : BulkCreateProgramDto, user : User) : Promise<Program[] | undefined>{
+        try {
+            const {programs} = bulkCreateProgramDto;
+            const queryRunner = this.datasource.createQueryRunner();
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+
+            for (const program of programs){
+                const {name,code} = program;
+                const existingProgram = await queryRunner.manager.findOneBy(Program,{name, code});
+
+                if(existingProgram){
+                    throw new ConflictException(`Program with name ${name} and ${code} already exists`)
+                }
+
+                
+
+            }
+
+        } catch (error) {
+            this.handleException(error);
+        }
+    }
 
 
 
