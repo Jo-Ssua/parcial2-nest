@@ -1,0 +1,473 @@
+{
+  "info": {
+    "_postman_id": "3bf98a7e-5830-4451-a792-4c6a9c026986",
+    "name": "2026-2 Evaluación Corte 2 — Program",
+    "description": "Peticiones de ejemplo para los 3 retos. Ejecuta primero la carpeta Setup. Las peticiones protegidas usan Bearer {{token}}, que se llena al hacer Login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:9000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "programId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentId1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "studentId2",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "id": "4fe562f5-951a-4864-b761-ff10abdc5941",
+      "name": "Setup",
+      "item": [
+        {
+          "id": "31a351a7-6d93-4a07-84a6-145c0a2fff01",
+          "name": "Seed (carga 40 estudiantes)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/seed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "seed"
+              ]
+            },
+            "description": "Borra los estudiantes y carga los de prueba.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "ffccc4e5-4b4a-4ffb-97eb-fee42b308bf6",
+          "name": "Registrar usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "signup"
+              ]
+            },
+            "description": "Todo usuario nuevo queda con rol teacher. Para volverlo admin: UPDATE \"user\" SET roles = '{admin}' WHERE email = 'admin@icesi.edu.co';",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@icesi.edu.co\",\n  \"password\": \"Admin12345\",\n  \"fullName\": \"Admin Icesi\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "571274b1-8a18-47c4-9c29-b3269dac2c3b",
+          "name": "Login (guarda el token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "auth"
+              ]
+            },
+            "description": "Inicia sesión y guarda el token en la variable de colección {{token}}. Para el Reto 3 este usuario debe tener rol admin (ver README).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@icesi.edu.co\",\n  \"password\": \"Admin12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) pm.collectionVariables.set('token', body.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "8e8c2030-03a9-4d4e-b34a-eab2d225e6c9",
+          "name": "Listar estudiantes (para copiar ids)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/student?limit=5&skip=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "student"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "skip",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "id": "e6d3a59a-d44d-43ac-9b35-d5f5412d3686",
+      "name": "Reto 1 — Program",
+      "item": [
+        {
+          "id": "3893c416-2fc7-43ef-9ee1-4eb5ee7a679c",
+          "name": "Crear programa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/program",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "program"
+              ]
+            },
+            "description": "201 con el programa. Repetido → 409. Datos inválidos → 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ingenieria de Sistemas\",\n  \"code\": \"SIS\",\n  \"credits\": 160\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "9aca4dd8-c6db-4c4f-a540-e18e836b3801",
+          "name": "Crear programa inválido (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/program",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "program"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"X\",\n  \"code\": \"sis\",\n  \"credits\": -1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "c137f1eb-f29d-4da4-9da5-4079aa8eeec8",
+          "name": "Listar programas (paginado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/program?limit=10&skip=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "program"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "skip",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "id": "5e53d8af-2a9a-4d80-92bc-d68f3056ff77",
+      "name": "Reto 2 — Estudiantes del programa (acumulativo)",
+      "item": [
+        {
+          "id": "4bb053f2-9bfd-4943-aa74-d92396dcddb6",
+          "name": "Ver programa con estudiantes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/program/{{programId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "program",
+                "{{programId}}"
+              ]
+            },
+            "description": "400 si no es UUID, 404 si no existe.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "id": "9f1f6c81-37d1-4528-93e0-1a2de62d25ce",
+          "name": "Agregar estudiantes",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/program/{{programId}}/students",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "program",
+                "{{programId}}",
+                "students"
+              ]
+            },
+            "description": "Acumulativo: conserva los estudiantes que ya tenía el programa. Transacción: si algún id no existe → 404 y nadie de esta petición queda asignado.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentIds\": [\n    \"{{studentId1}}\",\n    \"{{studentId2}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "id": "f9fd6c7a-0d54-4f75-9a36-143ae1ff56b9",
+      "name": "Reto 3 — Creación en lote",
+      "item": [
+        {
+          "id": "d15e5423-4e1c-41cf-b3e2-a7847aee1171",
+          "name": "Crear programas en lote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programs\": [\n    {\n      \"name\": \"Arquitectura\",\n      \"code\": \"ARQ\",\n      \"credits\": 170\n    },\n    {\n      \"name\": \"Derecho\",\n      \"code\": \"DER\",\n      \"credits\": 165\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/program/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "program",
+                "bulk"
+              ]
+            },
+            "description": "Todo o nada: un nombre/código repetido (en la BD o dentro del lote) → 409 y no se crea ninguno. Un elemento inválido → 400.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "id": "f48dabe4-29b1-47a8-943f-8411bba19a38",
+      "name": "Reto 4 — Seguridad",
+      "item": [
+        {
+          "id": "1e0b09b6-84bf-4d7f-a0c3-8ea2d302cff9",
+          "name": "Crear programa sin token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/program",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "program"
+              ]
+            },
+            "description": "Sin token → 401. Con token de teacher → 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Medicina\",\n  \"code\": \"MED\",\n  \"credits\": 200\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
