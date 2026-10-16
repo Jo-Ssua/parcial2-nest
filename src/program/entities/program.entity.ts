@@ -10,9 +10,10 @@
 
 import { Student } from "src/student/entities/student.entity";
 import { User } from "src/user/entities/user.entity";
-import {  Column, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import {  Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 // Jest no resuelve el alias "src/" y el test de Student dejaría de correr.
+@Entity()
 export class Program {
 
     @PrimaryGeneratedColumn("uuid")
