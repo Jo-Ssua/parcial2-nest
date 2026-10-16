@@ -8,6 +8,7 @@ import { PaginationDto } from 'src/student/dto/pagination.dto';
 import { AssignStudentsDto } from './dto/assign-students.dto';
 import { BulkCreateProgramDto } from './dto/bulk-create-program.dto';
 import { isUUID } from 'class-validator';
+import { Student } from 'src/student/entities/student.entity';
 
 @Injectable()
 export class ProgramService {
@@ -18,6 +19,8 @@ export class ProgramService {
     constructor(
         @InjectRepository(Program)
         private readonly programRepository : Repository<Program>,
+        @InjectRepository(Student)
+        private readonly studentRepository : Repository<Student>,
         private readonly datasource : DataSource,
     ){}
 
@@ -83,6 +86,70 @@ export class ProgramService {
     //   Si algún id no existe: 404 y rollback.
 
     async assignStudents(id : string, assignStudentsDto : AssignStudentsDto){
+        const queryRunner = this.datasource.createQueryRunner();
+        const {studentIds} = assignStudentsDto;
+
+        try{
+
+            const program = await this.programRepository.findOneBy({id});
+
+            if(!program){
+                throw new NotFoundException(`No existe el club con id ${id}`);
+            }
+            const queryRunner = this.datasource.createQueryRunner();
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+     
+
+            if(studentIds){
+
+                const currentStudents = await queryRunner.manager.find(Student, {
+                    where: {program : {id}}
+                    }
+                )
+                for (const newStudent of studentIds){
+                    const existing = currentStudents.find(
+                        student => student.id === newStudent
+                    );
+
+                    if(existing) {
+                        existing.program = program
+                    }else{
+                        const student = await this.studentRepository.findOneBy({id: newStudent});
+                        if(student){
+                            currentStudents.push(student);
+
+                        }
+                        
+                    }
+
+
+                }
+
+                program.students = currentStudents;
+
+                
+            }
+
+            await queryRunner.manager.save(program);
+            await queryRunner.commitTransaction();
+            await queryRunner.release();
+
+
+            return await this.findOne(program.id);
+
+
+
+
+        }catch(error){
+            if(queryRunner.isTransactionActive){
+                await  queryRunner.rollbackTransaction();
+            }
+            this.handleException(error);
+        }finally{
+            await queryRunner.release();
+        }
+
         
     }
 
